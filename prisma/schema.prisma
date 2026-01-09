@@ -1,0 +1,217 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Admin settings (single row - PIN storage)
+model AdminSettings {
+  id        String   @id @default(cuid())
+  pinHash   String   // bcrypt hash of 6-digit PIN
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("admin_settings")
+}
+
+// Site content - main page
+model Page {
+  id        String   @id @default(cuid())
+  name      String   @unique // e.g., "home"
+  published Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  brand     Brand?
+  navbar    Navbar?
+  hero      Hero?
+  sections  Section[]
+  footer    Footer?
+}
+
+// Brand settings
+model Brand {
+  id          String   @id @default(cuid())
+  pageId      String   @unique
+  siteName    String   @default("Menuzin")
+  tagline     String   @default("Digital menus made simple")
+  logoType    String   @default("text") // "text" or "image"
+  logoImage   String?  // URL if logoType is "image"
+  primaryColor String  @default("#C2410C")
+  primaryHover String  @default("#9A3412")
+  backgroundColor String @default("#FAFAF9")
+  textColor   String   @default("#0F172A")
+  mutedTextColor String @default("#64748B")
+  accentColor String   @default("#365314")
+  borderColor String   @default("#E5E7EB")
+  
+  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Navbar configuration
+model Navbar {
+  id          String   @id @default(cuid())
+  pageId      String   @unique
+  showLogin   Boolean  @default(true)
+  
+  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  links NavbarLink[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model NavbarLink {
+  id        String   @id @default(cuid())
+  navbarId  String
+  label     String
+  href      String   // section ID or URL
+  order     Int      @default(0)
+  
+  navbar Navbar @relation(fields: [navbarId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([navbarId, order])
+}
+
+// Hero section
+model Hero {
+  id          String   @id @default(cuid())
+  pageId      String   @unique
+  headline    String
+  subheadline String
+  imageUrl    String?
+  ctaLabel    String   @default("Contact Us")
+  ctaAction   String   @default("whatsapp") // "whatsapp" or "link"
+  ctaLink     String?  // if ctaAction is "link"
+  enabled     Boolean  @default(true)
+  
+  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Reusable section model
+model Section {
+  id          String   @id @default(cuid())
+  pageId      String
+  type        String   // "how-it-works", "features", "guest-experience", "owner-portal", "clients", "faq", "contact"
+  title       String?
+  subtitle    String?
+  description String?  @db.Text
+  imageUrl    String?
+  enabled     Boolean  @default(true)
+  order       Int      @default(0)
+  
+  // JSON content for flexible data
+  content     Json?    // For steps, features, FAQs, etc.
+  
+  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([pageId, type])
+  @@index([pageId, order])
+}
+
+// Footer
+model Footer {
+  id          String   @id @default(cuid())
+  pageId      String   @unique
+  companyBlurb String? @db.Text
+  copyright   String   @default("© 2025 Menuzin. All rights reserved.")
+  
+  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  links FooterLink[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FooterLink {
+  id        String   @id @default(cuid())
+  footerId  String
+  label     String
+  href      String
+  order     Int      @default(0)
+  
+  footer Footer @relation(fields: [footerId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([footerId, order])
+}
+
+// Contact form submissions
+model ContactSubmission {
+  id            String   @id @default(cuid())
+  restaurantName String
+  city          String
+  phone         String
+  branches      String
+  message       String?  @db.Text
+  handled       Boolean  @default(false)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([handled])
+  @@index([createdAt])
+}
+
+// Global settings
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+  
+  @@map("settings")
+}
+
+// Uploaded images/photos
+model Image {
+  id          String   @id @default(cuid())
+  filename    String
+  originalName String
+  url         String   // Full URL or path
+  mimeType    String?  // e.g., "image/jpeg", "image/png"
+  size        Int?     // File size in bytes
+  width       Int?     // Image width in pixels
+  height      Int?     // Image height in pixels
+  alt         String?  // Alt text for accessibility
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("images")
+  @@index([url])
+}
+
+// Site Content - JSON-based content management (draft/published)
+model SiteContent {
+  id        String   @id @default(cuid())
+  pageKey   String   @unique // e.g., "home"
+  draft     Json     // Draft content (editable)
+  published Json     // Published content (live)
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  
+  @@map("site_content")
+}
+
+
