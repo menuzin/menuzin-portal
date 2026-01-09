@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth";
+import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
@@ -9,16 +9,23 @@ const updateSchema = z.object({
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAuth();
+    // Check auth cookie
+    const cookieStore = await cookies();
+    const adminSession = cookieStore.get("admin_session")?.value;
+    
+    if (!adminSession || adminSession !== "valid") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
+    const { id } = await params;
     const body = await request.json();
     const data = updateSchema.parse(body);
 
     const submission = await prisma.contactSubmission.update({
-      where: { id: params.id },
+      where: { id },
       data,
     });
 

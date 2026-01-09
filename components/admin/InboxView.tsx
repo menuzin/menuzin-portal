@@ -21,6 +21,7 @@ export default function InboxView() {
 
   useEffect(() => {
     loadSubmissions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
 
   const loadSubmissions = async () => {

@@ -1,5 +1,6 @@
 import { prisma } from './prisma'
 import bcrypt from 'bcryptjs'
+import { cookies } from 'next/headers'
 
 export async function hashPin(pin: string): Promise<string> {
   return bcrypt.hash(pin, 10)
@@ -31,4 +32,13 @@ export async function updateAdminPin(pinHash: string) {
 export async function checkAdminExists(): Promise<boolean> {
   const settings = await prisma.adminSettings.findFirst()
   return !!settings
+}
+
+export async function requireAuth(): Promise<void> {
+  const cookieStore = await cookies();
+  const adminSession = cookieStore.get('admin_session')?.value;
+  
+  if (!adminSession || adminSession !== 'valid') {
+    throw new Error('Unauthorized');
+  }
 }

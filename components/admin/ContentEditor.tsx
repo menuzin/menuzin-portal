@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Save, Upload, X, Plus, Loader2, Rocket } from "lucide-react";
+import Image from "next/image";
 import { SiteContent } from "@/lib/content-schema";
 
 export default function ContentEditor() {
@@ -322,10 +323,12 @@ export default function ContentEditor() {
             <div className="mt-4 p-4 bg-background rounded-lg border border-border">
               <p className="text-sm text-text-muted mb-3">Current Logo:</p>
               <div className="flex items-center gap-4">
-                <img
+                <Image
                   src={content.brand.logoUrl}
                   alt="Header logo"
-                  className="h-16 object-contain"
+                  width={64}
+                  height={64}
+                  className="h-16 w-auto object-contain"
                   onError={(e) => {
                     (e.target as HTMLImageElement).style.display = 'none';
                   }}
@@ -430,10 +433,12 @@ export default function ContentEditor() {
               {logo.url && (
                 <div className="mt-2 p-3 bg-background rounded-lg border border-border">
                   <p className="text-sm text-text-muted mb-2">Current Logo:</p>
-                  <img
+                  <Image
                     src={logo.url}
                     alt={logo.name || `Client logo ${index + 1}`}
-                    className="h-12 object-contain"
+                    width={48}
+                    height={48}
+                    className="h-12 w-auto object-contain"
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = 'none';
                     }}
@@ -446,7 +451,7 @@ export default function ContentEditor() {
 
           {content.clients.logos.length === 0 && (
             <div className="text-center py-8 text-text-muted border-2 border-dashed border-border rounded-lg">
-              No clients yet. Click "Add Client" to get started.
+              No clients yet. Click &quot;Add Client&quot; to get started.
             </div>
           )}
         </div>
